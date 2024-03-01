@@ -1,7 +1,7 @@
 from rest_framework import generics, views, response, status
 from .models import Movies
 from django.db.models import Count, Avg
-from .serializer import MoviesSerializer
+from .serializer import MoviesSerializer, MovieStatsSerializer
 from rest_framework.permissions import IsAuthenticated
 from app.permission import GlobalDefaultPermission
 from review.models import Review
@@ -36,12 +36,17 @@ class MovieStatsView(views.APIView):
             Review.objects.aggregate(avg_stars=Avg('stars'))['avg_stars'], 2
         )
 
+        movie_stats = {
+            'total_movies': total_movies,
+            'movies_by_genre': movies_by_genre,
+            'total_review': total_review,
+            'average_stars': average_stars
+        }
+
+        serializer = MovieStatsSerializer(data=movie_stats)
+        serializer.is_valid(raise_exception=True) # valida os dados e se n for da um exception
+
         return response.Response(
-            data={
-                'total_movies': total_movies,
-                'movies_by_genre': movies_by_genre,
-                'total_review': total_review,
-                'average_stars': average_stars
-            },
+            data=serializer.validated_data,
             status=status.HTTP_200_OK
         )
